@@ -63,8 +63,6 @@
 
 ----------------------------------------------
 
-
-
 2) Identify the supplier with the most approved parts: Consider only the latest approval for each part, calculate the total cost associated with these approvals, and output supplier name, number of parts, and total cost.
 
     Table Schema
@@ -110,3 +108,69 @@
         GROUP BY s.supplier_id
         ORDER BY num_parts DESC
         LIMIT 1;
+
+
+-------------------------------------------------------------
+3)
+    Find the top 5 departments with the highest average GPA.
+    Consider only departments where the average age of enrolled students is below 25.
+    Include only courses taught by professors with at least 5 years of service.
+    Courses must have at least [missing criteria].
+    Data Structure (Based on the images):
+
+    Table Schema: 
+        Professors:
+            professor_id,
+            first_name,
+            last_name,
+            hire_date,
+            department_id
+        Courses:
+            course_id,
+            course_name,
+            department_id,
+            start_date,
+            end_date,
+            credits
+        Departments:
+            department_id,
+            department_name,
+            location
+        Enrollments:
+            enrollment_id,
+            student_id,
+            course_id,
+            grade
+        Students:
+            student_id,
+            first_name,
+            last_name,
+            date_of_birth,
+            major
+
+    Query:
+
+    WITH EligibleDepartments AS (
+        SELECT d.department_id
+        FROM Departments d
+        
+        JOIN Professors p ON d.department_id = p.department_id
+        JOIN Courses c ON d.department_id = c.department_id
+        JOIN Enrollments e ON c.course_id = e.course_id
+        JOIN Students s ON e.student_id = s.student_id
+
+        WHERE p.hire_date <= DATE_ADD(CURDATE(), INTERVAL -5 YEAR) -- Adjust for specific date format
+        AND AVG(s.date_of_birth) < DATE_ADD(CURDATE(), INTERVAL -25 YEAR) -- Adjust for specific date format
+        AND c.credits >= [minimum credits] -- Replace with the required minimum credits
+        GROUP BY d.department_id
+        HAVING AVG(e.grade) IS NOT NULL
+    )
+
+    SELECT d.department_id, AVG(e.grade) AS average_gpa
+    FROM Departments d
+    JOIN EligibleDepartments ed ON d.department_id = ed.department_id
+    JOIN Courses c ON d.department_id = c.department_id
+    JOIN Enrollments e ON c.course_id = e.course_id
+    GROUP BY d.department_id
+    ORDER BY average_gpa DESC
+    LIMIT 5;
